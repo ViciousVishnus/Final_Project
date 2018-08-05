@@ -1,9 +1,4 @@
-#IMPORTANT
-#THIS WILL NOT WORK WITHOUT THE OTHER FILES ON MICHAEL'S COMPUTER
-#THOSE FILES WERE TOO FAT FOR GITHUB
-#IF YOU WANT THOSE FILES ASK MICHAEL
-
-height = int(input("For the function to measure distances, you need to input your height (in inches) so we can use it for scale:\n")) - 4
+height = int(input("For the function to measure distances, you need to input your height (in inches) so we can use it for scale:\n"))-4
 #Substract 4 because the height only goes from the forehead to the ankles
 from pathlib import Path
 import sys
@@ -32,7 +27,9 @@ cfg = load_config("demo/pose_cfg.yaml")
 # Load and setup CNN part detector
 sess, inputs, outputs = predict.setup_pose_prediction(cfg)
 print("FINISHED IMPORTING EVERTHING")
-
+def __init__():
+    pass
+__init__()
 def new_pic(name):
     '''
     Takes new picture and saves it as a PNG
@@ -154,6 +151,11 @@ def vid_pics(sec=1,where = "temp2/vid_pic"):
     cv2.destroyAllWindows()
 def vid_view(sec=10):
     '''
+    Displays video feed but does not save it anywhere. This allows the user to position themselves appropriately
+    
+    Parameters
+    ----------
+    sec: amount of time (when sec=1 the time is about 1 second but not exactly)
     
     '''
     cap = cv2.VideoCapture(0)
@@ -169,6 +171,9 @@ def vid_view(sec=10):
     cap.release()
     cv2.destroyAllWindows()
 def arms(new = False,where="your_file"):
+    '''
+    Does arm_span and arm_span_est
+    '''
     scale = 0 #Number of inches per pixel
     if(new):
         new_pic(where+".PNG")
@@ -190,6 +195,9 @@ def arms(new = False,where="your_file"):
 # Read image from file
 #new_pic()
 def kick_vid(new = False):
+    '''
+    Takes a video, takes 40 frames from the video, maps the body in each, and finds the maximum height
+    '''
     shoe_size = int(input("What is your shoe size (US):\n"))
     scale = 0 #Number of inches per pixel
     if(new):
@@ -222,6 +230,9 @@ def kick_vid(new = False):
     # Visualise
     disp_pic(where="temp/vid_pic"+str(np.argmax(ans)))
 def disp_pic(new = False,where="your_file4"):
+    '''
+    Displays image
+    '''
     if(new):
         new_pic("QWERTY12345")
         where="QWERTY12345"
@@ -239,13 +250,22 @@ def disp_pic(new = False,where="your_file4"):
     visualize.show_heatmaps(cfg, image, scmap, pose)
     visualize.waitforbuttonpress()
 def trainer_vid(wh):
+    '''
+    Prepares data for GAIT
+    '''
     vid_view(sec=10)
     print("GO")
     return vid_pics(sec=2,where=wh)
 def get_person_data(person):
+    '''
+    Takes in the data for GAIT and resizes the array in the form most suitable for the train
+    '''
     Final_Array = np.zeros(shape=(15,20,9,2))
     for i in range(15):
         trainer_vid("walk_data/"+person+"/vid"+str(i)+"/pic")
+        if(input("Video index: "+str(i)+" has been taken. Type yeet to leave:\n")=="yeet"):
+            return
+    for i in range(15):
         for j in range(20):
             image = imread("walk_data/"+person+"/vid"+str(i)+"/pic"+str(j)+".PNG", mode='RGB')
 
@@ -264,16 +284,50 @@ def get_person_data(person):
                 temp[k] = pose[list_indexes[k]][0:2]
             Final_Array[i][j] = temp
         
-        if(input(str(i)+" is finished. Type yeet to quit. Type anything else to continue:\n")=="yeet"):
-            return
+        print(str(i)+" is finished")
     print(Final_Array.shape)
     Answer = np.zeros(shape=(9,15,20,2))
     for i in range(9):
         Answer[i] = Final_Array[:,:,i,:]
     print(Answer.shape)
     return Answer
+def get_test_data():
+    '''
+    Takes in the data for GAIT and resizes the array in the form most suitable for the train
+    '''
+    Final_Array = np.zeros(shape=(20,9,2))
+    trainer_vid("test/pic")
+    for j in range(20):
+        image = imread("test/pic"+str(j)+".PNG", mode='RGB')
 
-np.save("MichaelData",get_person_data("Michael"))
+        image_batch = data_to_input(image)
+
+        # Compute prediction with the CNN
+        outputs_np = sess.run(outputs, feed_dict={inputs: image_batch})
+        scmap, locref, _ = predict.extract_cnn_output(outputs_np, cfg)
+
+        # Extract maximum scoring location from the heatmap, assume 1 person
+        pose = predict.argmax_pose_predict(scmap, locref, cfg.stride)
+
+        temp = np.zeros(shape=(9,2))
+        list_indexes = [0,1,4,5,6,7,10,11,13]
+        for k in range(9):
+            temp[k] = pose[list_indexes[k]][0:2]
+        Final_Array[j] = temp
+    print(Final_Array.shape)
+    temp2 = np.zeros(shape=(2,20,9))
+    temp2[0] = Final_Array[:,:,0]
+    temp2[1] = Final_Array[:,:,1]
+    Answer = np.zeros(shape=(9,2,20))
+    for i in range(9):
+        Answer[i] = temp2[:,:,i]
+    print(Answer.shape)
+    return Answer
+#for i in range(1,2):
+#    np.save("Unknown_Walker_e",get_test_data())
+#    if(input("Yeet?")=="yeet"):
+#        break
+#np.save("",get_person_data(""))
 #disp_pic()
 #arms()
-#kick_vid(new=False)
+kick_vid(new=False)
