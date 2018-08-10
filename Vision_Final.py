@@ -116,44 +116,45 @@ def name():
     return question(names)
 @ask.intent('NameIntent')
 def storeintodatabase(name):
-    img_array = take_picture()
-    # load the models that dlib has to detect faces.
-    load_dlib_models()
-    face_detect2 = models["face detect"]
-    face_rec_model2 = models["face rec"]
-    shape_predictor2 = models["shape predict"]
+    for rans in range(3):
+        img_array = take_picture()
+        # load the models that dlib has to detect faces.
+        load_dlib_models()
+        face_detect2 = models["face detect"]
+        face_rec_model2 = models["face rec"]
+        shape_predictor2 = models["shape predict"]
 
-    # Take in the (H,W,3) img_array and return the number of face detections in the photo
-    detections = list(face_detect2(img_array))
+        # Take in the (H,W,3) img_array and return the number of face detections in the photo
+        detections = list(face_detect2(img_array))
 
-    # for each detected face, create a descriptor
-    descriptors = []
-    for image in range(len(detections)):
-        shape = shape_predictor2(img_array, detections[image])
-        descriptor = np.array(face_rec_model2.compute_face_descriptor(img_array, shape))
-        descriptors.append(descriptor)
-    if type(detections) != list:
-        detections = list(detections)
-    if len(detections) == 1:
-        rect = detections[0]
-        fig, ax = plt.subplots()
-        x1, x2, y1, y2 = rect.left(), rect.right(), rect.top(), rect.bottom()
-        ax.imshow(img_array[y1:y2, x1:x2, :])
-
-
-    else:
-        fig, ax = plt.subplots(ncols=len(detections))
-        # https://stackoverflow.com/questions/46615554/how-to-display-multiple-images-in-one-figure-correctly
-        for i, rect in enumerate(detections):
+        # for each detected face, create a descriptor
+        descriptors = []
+        for image in range(len(detections)):
+            shape = shape_predictor2(img_array, detections[image])
+            descriptor = np.array(face_rec_model2.compute_face_descriptor(img_array, shape))
+            descriptors.append(descriptor)
+        if type(detections) != list:
+            detections = list(detections)
+        if len(detections) == 1:
+            rect = detections[0]
+            fig, ax = plt.subplots()
             x1, x2, y1, y2 = rect.left(), rect.right(), rect.top(), rect.bottom()
-            ax[i].imshow(img_array[y1:y2, x1:x2, :])
-            ax[i].axis('off')
-    faces = import_pickle()
-    if name in faces.keys():
-        faces[name].append(descriptor)
-    else:
-        faces.update([(name,descriptor)])
-    pickle_the_pickle(faces)
+            ax.imshow(img_array[y1:y2, x1:x2, :])
+
+
+        else:
+            fig, ax = plt.subplots(ncols=len(detections))
+            # https://stackoverflow.com/questions/46615554/how-to-display-multiple-images-in-one-figure-correctly
+            for i, rect in enumerate(detections):
+                x1, x2, y1, y2 = rect.left(), rect.right(), rect.top(), rect.bottom()
+                ax[i].imshow(img_array[y1:y2, x1:x2, :])
+                ax[i].axis('off')
+        faces = import_pickle()
+        if name in faces.keys():
+            faces[name].append(descriptor)
+        else:
+            faces.update([(name,descriptor)])
+        pickle_the_pickle(faces)
     return statement("Now you are in our database!!")
 
 

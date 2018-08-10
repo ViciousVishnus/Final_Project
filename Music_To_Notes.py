@@ -1,14 +1,4 @@
 
-# coding: utf-8
-
-# In[1]:
-
-
-####Ryan Blow
-
-
-# In[2]:
-
 
 from microphone import record_audio
 import numpy as np
@@ -21,11 +11,10 @@ def homepage():
     return "MusicNotes"
 @ask.launch
 def start_skill():
-    welcome_message= 'Hello, please sing a note for 15 seconds. '
-    return statement(welcome_message)
+    welcome_message= 'Hello, please sing a note for 5 seconds. Are you ready?'
+    return question(welcome_message)
 
-listen_time=15
-get_ipython().run_line_magic('matplotlib', 'notebook')
+listen_time=5
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 from scipy.ndimage.filters import maximum_filter
@@ -46,11 +35,8 @@ def recognize_notes():
     ax.set_ylim(0,2500)
     sum_S=S.sum(axis=1)
     freq=[]
-    print(sum_S.shape)
     for i in range(len(sum_S)):
-        if sum_S[i]>200000:
-            print(sum_S[i])
-            print(i)
+        if sum_S[i]>70000:
             freq_bins=freqs[i]
             freq.append(freq_bins)
     with open("notes.pkl", mode="rb") as opened_file:
@@ -74,8 +60,15 @@ def recognize_notes():
                 if notes_keys[j] is real_note:
                     notes.append(notes_keys[j])
     counter=Counter(notes)
-    guess=counter.most_common()
-    return statement(guess)
+    guess=counter.most_common(3)
+    guesses_notes=[]
+    for values in range(len(guess)):
+        guesses_notes.append(guess[values][0])
+    guesses=" and ".join(guesses_notes)
+    guesses="you played " + guesses
+    if len(guesses_notes) == 0:
+        guesses="We couldn't tell what note you played"
+    return statement(guesses)
 @ask.intent('AMAZON.CancelIntent')
 @ask.intent('AMAZON.StopIntent')
 @ask.intent('AMAZON.NoIntent')
